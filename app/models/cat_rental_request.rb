@@ -1,65 +1,51 @@
 class CatRentalRequest < ActiveRecord::Base
   STATUSES = ["PENDING", "APPROVED", "DENIED"]
   validates :cat_id, :start_date, :end_date, :status, presence: true
-  validates :status, inclusion: { in: STATUSES, message: "%{value} is not a valid status"}
+  validates :status, inclusion: { 
+    in: STATUSES, message: "%{value} is not a valid status"
+  }
+  validate :no_overlapping_approved_requests
+ 
+  belongs_to(
+    :cat,
+    class_name: "Cat",
+    foreign_key: :cat_id,
+    primary_key: :id
+  )
   
+  after_initialize(
+    :set_default_status
+  )
   
-  def overlapping_requests
-
-    
+  def set_default_status
+    self.status ||= "PENDING"
+  end
+  
+  def overlapping_requests 
     query = <<-SQL
     SELECT DISTINCT
       *
     FROM
-    cat_rental_requests AS a
-    LEFT OUTER JOIN
-    cat_rental_requests AS b
-    ON
-    a.cat_id = b.cat_id
+    cat_rental_requests
     WHERE
-    ((? BETWEEN b.start_date AND b.end_date)
+    ((? BETWEEN start_date AND end_date)
     OR
-    (? BETWEEN b.start_date AND b.end_date))
+    (? BETWEEN start_date AND end_date))
     AND
-    a.id != b.id
-    AND
-    a.id != ?
-    AND
-    b.id != ?
+    id != ?
     SQL
-    
-    CatRentalRequest.find_by_sql([query, start_date, end_date, id, id])
+    id_to_use = (self.id.nil? ? 0 : self.id)
+    CatRentalRequest.find_by_sql([query, start_date, end_date, id_to_use])
   end
   
-  def overlapping_approved_requests
+  def no_overlapping_approved_requests
+    overlaps = overlapping_requests.select do |crr| 
+      crr.status == "APPROVED"
+    end
     
+    unless overlaps.empty?
+      errors[:request] << "can't overlap with an approved request"
+    end
   end
   
 end
-#
-# query = <<-SQL
-# SELECT DISTINCT
-#   a.*
-# FROM
-# cat_rental_requests AS a
-# JOIN
-# cat_rental_requests AS b
-# ON
-# a.cat_id = b.cat_id
-# WHERE
-# a.start_date BETWEEN b.start_date AND b.end_date
-# AND
-# a.id != #{self.id}
-# SQL
-
-#
-# query = <<-SQL
-# SELECT DISTINCT
-#   *
-# FROM
-#   cat_rental_requests
-# WHERE
-#   start_date BETWEEN (start_date + 1) AND end_date
-# AND
-#   id != #{self.id}
-# SQL

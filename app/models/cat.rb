@@ -9,6 +9,14 @@ class Cat < ActiveRecord::Base
   
   validates :sex, inclusion: { in: SEX, message: "%{value} is not a valid sex"}
   
+  has_many(
+    :rental_requests,
+    class_name: "CatRentalRequest",
+    foreign_key: :cat_id,
+    primary_key: :id,
+    dependent: :destroy
+  )
+ 
 
   def age
     days = (Date.today - birth_date).to_i
