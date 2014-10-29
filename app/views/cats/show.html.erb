@@ -19,5 +19,13 @@
 <h3>About Me. Read and weep.</h3>
 <p><%= @cat.description %>
 </p>
+<h3>Rental Requests for me </h3>
+<p>
+  <% @cat.sorted_requests.each_with_index do |rr, i| %>
+    <%= "Rental Request ##{i+1}" %><br>
+    From: <%= rr.start_date %> To: <%= rr.end_date %> : <%= rr.status %><br>
+  <% end %>
+</p>
+
 <%= link_to "All Cats", cats_url %>
 <%= link_to "Edit me", edit_cat_url(@cat)%>

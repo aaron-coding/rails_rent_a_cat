@@ -21,6 +21,22 @@ class CatRentalRequest < ActiveRecord::Base
     self.status ||= "PENDING"
   end
   
+  def approve!
+    ActiveRecord::Base.transaction do
+      self.status = "APPROVED"
+      self.save!
+      overlapping_pending_requests.each do |request|
+        request.deny!
+      end
+    end
+    
+  end
+  
+  def deny!
+    self.status = "DENIED"
+    self.save!
+  end
+  
   def overlapping_requests 
     query = <<-SQL
     SELECT DISTINCT
@@ -28,14 +44,21 @@ class CatRentalRequest < ActiveRecord::Base
     FROM
     cat_rental_requests
     WHERE
-    ((? BETWEEN start_date AND end_date)
-    OR
-    (? BETWEEN start_date AND end_date))
+      id != :id_to_use
     AND
-    id != ?
+      (((:start_date BETWEEN start_date AND end_date)
+      OR
+      (:end_date BETWEEN start_date AND end_date))
+    OR
+      ((start_date BETWEEN :start_date AND :end_date)
+      OR 
+      (end_date BETWEEN :start_date AND :end_date)))
     SQL
     id_to_use = (self.id.nil? ? 0 : self.id)
-    CatRentalRequest.find_by_sql([query, start_date, end_date, id_to_use])
+    CatRentalRequest.find_by_sql([query, {
+      start_date: start_date,
+      end_date: end_date, 
+      id_to_use: id_to_use }])
   end
   
   def no_overlapping_approved_requests
@@ -43,9 +66,16 @@ class CatRentalRequest < ActiveRecord::Base
       crr.status == "APPROVED"
     end
     
-    unless overlaps.empty?
+    if !(overlaps.empty?) && status == "APPROVED"
       errors[:request] << "can't overlap with an approved request"
     end
+  end
+  
+  def overlapping_pending_requests
+    overlaps = overlapping_requests.select do |crr| 
+      crr.status == "PENDING"
+    end
+    overlaps
   end
   
 end

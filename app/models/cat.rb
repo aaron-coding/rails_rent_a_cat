@@ -30,4 +30,9 @@ class Cat < ActiveRecord::Base
   def genders
     ["M", "F"]
   end
+
+  def sorted_requests
+    self.rental_requests.sort_by { |rr| rr.start_date } 
+  end
+
 end
