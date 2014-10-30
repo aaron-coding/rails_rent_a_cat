@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cats99</title>
+  <%= csrf_meta_tags %>
+</head>
+<body>
+
+<h1><%= current_user.nil? ? link_to("log in here", new_session_url) : "Hello #{current_user.user_name}!" %></h1>
+<%= button_to("Click here to log out", session_url, method: "delete") if current_user %>
+<%= flash[:errors] && flash[:errors].to_json%>
+
+<%= yield %>
+
+<br>
+<br>
+<br>
+
+
+</body>
+</html>
