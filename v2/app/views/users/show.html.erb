@@ -1,0 +1,34 @@
+<h2> Here are your Kitty Requests: </h2>
+<table>
+  <tr>
+    <th>Cat Name</th>
+    <th>Start Date</th>
+    <th>End Date</th>
+    <th>Status</th>
+  </tr>
+<% @cat_rental_requests.each do |request| %>
+    <tr>
+      <td><%= request.cat.name %></td>
+      <td><%= request.start_date %></td>
+      <td><%= request.end_date %></td>
+      <td><%= request.status %></td>
+    </tr>
+  <% end %>
+</table>
+
+<br>
+<br>
+
+<table>
+  <tr>
+    <th>Logged in devices</th>
+    <% @logged_in_useragents.each do |agent| %>
+        <tr>
+          <td><%= agent %></td>
+        <tr>
+    <% end %>
+  </tr>
+</table>
+
+
+<p> <%= link_to "Rent a cat!", new_cat_rental_request_url %> </p>
